@@ -362,9 +362,12 @@
         .vehicle-image {
             max-width: 100%;
             max-height: 200px;
+            width: auto;
+            height: auto;
             object-fit: contain;
             filter: drop-shadow(0 10px 30px rgba(138, 43, 226, 0.3));
             animation: vehicleFloat 3s ease-in-out infinite;
+            transition: all 0.5s ease;
         }
 
         @keyframes vehicleFloat {
@@ -504,6 +507,18 @@
             0%, 100% { transform: translateX(0); }
             25% { transform: translateX(-10px); }
             75% { transform: translateX(10px); }
+        }
+
+        /* Image Error Fallback */
+        .image-error {
+            padding: 40px;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .image-error-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
         }
 
         /* Responsive */
@@ -686,13 +701,16 @@
     </div>
 
     <script>
-        // Vehicle images (replace with actual image URLs)
+        // Base path untuk gambar - sesuaikan dengan struktur folder Anda
+        const BASE_PATH = './'; // Ubah sesuai kebutuhan, misal: '/namaproject/' atau '../'
+        
+        // Vehicle images dengan path lokal
         const vehicleImages = {
-            '1': 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"%3E%3Cpath fill="%239945ff" d="M171.3 96H224v96H111.3l30.4-75.9C146.5 104 158.2 96 171.3 96zM272 192V96h81.2c9.7 0 18.9 4.4 25 12l67.2 84H272zm256.2 1L428.2 68c-18.2-22.8-45.8-36-75-36H171.3c-39.3 0-74.6 23.9-89.1 60.3L40.6 196.4C16.8 205.8 0 228.9 0 256V368c0 17.7 14.3 32 32 32H65.3c7.6 45.4 47.1 80 94.7 80s87.1-34.6 94.7-80H385.3c7.6 45.4 47.1 80 94.7 80s87.1-34.6 94.7-80H608c17.7 0 32-14.3 32-32V320c0-65.2-48.8-119-111.8-127zM160 432c-26.5 0-48-21.5-48-48s21.5-48 48-48s48 21.5 48 48s-21.5 48-48 48zm320 0c-26.5 0-48-21.5-48-48s21.5-48 48-48s48 21.5 48 48s-21.5 48-48 48z"/%3E%3C/svg%3E',
-            '2': 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"%3E%3Cpath fill="%239945ff" d="M368 0c8.8 0 16 7.2 16 16V80c0 8.8-7.2 16-16 16s-16-7.2-16-16V16c0-8.8 7.2-16 16-16zM208 80c0-8.8 7.2-16 16-16h32c8.8 0 16 7.2 16 16s-7.2 16-16 16H224c-8.8 0-16-7.2-16-16zm256 0c0-8.8 7.2-16 16-16h32c8.8 0 16 7.2 16 16s-7.2 16-16 16H480c-8.8 0-16-7.2-16-16zM368 400V128H176c-17.7 0-32 14.3-32 32v96c0 17.7 14.3 32 32 32H368zm-224 80c0-26.5 21.5-48 48-48s48 21.5 48 48s-21.5 48-48 48s-48-21.5-48-48zm288 0c0-26.5 21.5-48 48-48s48 21.5 48 48s-21.5 48-48 48s-48-21.5-48-48z"/%3E%3C/svg%3E',
-            '3': 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"%3E%3Cpath fill="%239945ff" d="M48 48c0-26.5 21.5-48 48-48H352c26.5 0 48 21.5 48 48V96H48V48zM48 128H400V256c0 17.7-14.3 32-32 32H80c-17.7 0-32-14.3-32-32V128zM112 352c-26.5 0-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48s-21.5-48-48-48zm224 0c-26.5 0-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48s-21.5-48-48-48zm144-64c17.7 0 32 14.3 32 32v32c0 17.7-14.3 32-32 32H416c0-53-43-96-96-96s-96 43-96 96H176c0-53-43-96-96-96s-96 43-96 96H32c-17.7 0-32-14.3-32-32V320c0-17.7 14.3-32 32-32H480z"/%3E%3C/svg%3E',
-            '4': 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"%3E%3Cpath fill="%239945ff" d="M96 32C78.3 32 64 46.3 64 64V320H32c-17.7 0-32 14.3-32 32v64c0 17.7 14.3 32 32 32H64c0 53 43 96 96 96s96-43 96-96H384c0 53 43 96 96 96s96-43 96-96h32c17.7 0 32-14.3 32-32V352c0-17.7-14.3-32-32-32H576V64c0-17.7-14.3-32-32-32H96zM160 496c-26.5 0-48-21.5-48-48s21.5-48 48-48s48 21.5 48 48s-21.5 48-48 48zm320 0c-26.5 0-48-21.5-48-48s21.5-48 48-48s48 21.5 48 48s-21.5 48-48 48zM112 80H528V320H112V80z"/%3E%3C/svg%3E',
-            '5': 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"%3E%3Cpath fill="%239945ff" d="M64 32C46.3 32 32 46.3 32 64V320c-17.7 0-32 14.3-32 32v64c0 17.7 14.3 32 32 32c0 53 43 96 96 96s96-43 96-96H352c0 53 43 96 96 96s96-43 96-96h64c17.7 0 32-14.3 32-32V352c0-17.7-14.3-32-32-32V64c0-17.7-14.3-32-32-32H64zM128 496c-26.5 0-48-21.5-48-48s21.5-48 48-48s48 21.5 48 48s-21.5 48-48 48zm320 0c-26.5 0-48-21.5-48-48s21.5-48 48-48s48 21.5 48 48s-21.5 48-48 48zM80 80H560V320H80V80z"/%3E%3C/svg%3E'
+            '1': BASE_PATH + 'assets/images/G01.png',
+            '2': BASE_PATH + 'assets/images/G02.png',
+            '3': BASE_PATH + 'assets/images/G03.png',
+            '4': BASE_PATH + 'assets/images/G04.png',
+            '5': BASE_PATH + 'assets/images/G05.png'
         };
 
         const vehicleInfo = {
@@ -721,11 +739,17 @@
                 platePreview.classList.add('active');
                 
                 // Update info panel
-                document.getElementById('infoPlat').textContent = displayText;
+                const infoPlat = document.getElementById('infoPlat');
+                if (infoPlat) {
+                    infoPlat.textContent = displayText;
+                }
             } else {
                 plateDisplay.textContent = '- - - - -';
                 platePreview.classList.remove('active');
-                document.getElementById('infoPlat').textContent = '-';
+                const infoPlat = document.getElementById('infoPlat');
+                if (infoPlat) {
+                    infoPlat.textContent = '-';
+                }
             }
         }
 
@@ -744,13 +768,48 @@
         const vehicleImageContainer = document.getElementById('vehicleImageContainer');
         const vehicleInfoPanel = document.getElementById('vehicleInfo');
 
+        // Function to handle image load error
+        function handleImageError(imgElement) {
+            console.error('Gambar gagal dimuat');
+            vehicleImageContainer.innerHTML = `
+                <div class="image-error">
+                    <div class="image-error-icon">⚠️</div>
+                    <p>Gambar tidak dapat dimuat</p>
+                    <small>Periksa path: ${imgElement.src}</small>
+                </div>
+            `;
+        }
+
         vehicleType.addEventListener('change', function() {
             const selectedValue = this.value;
             
             if (selectedValue) {
-                // Show vehicle image
+                // Create image element
+                const img = new Image();
+                img.className = 'vehicle-image';
+                img.alt = `Golongan ${selectedValue}`;
+                
+                // Set up error handling
+                img.onerror = function() {
+                    handleImageError(this);
+                };
+                
+                // Set up success handling
+                img.onload = function() {
+                    vehicleImageContainer.innerHTML = '';
+                    vehicleImageContainer.appendChild(img);
+                    console.log('Gambar berhasil dimuat:', img.src);
+                };
+                
+                // Set image source
+                img.src = vehicleImages[selectedValue];
+                
+                // Show loading while image loads
                 vehicleImageContainer.innerHTML = `
-                    <img src="${vehicleImages[selectedValue]}" alt="Vehicle" class="vehicle-image">
+                    <div class="no-vehicle">
+                        <div class="loading" style="display: block;"></div>
+                        <p style="margin-top: 20px;">Memuat gambar...</p>
+                    </div>
                 `;
                 
                 // Show vehicle info
@@ -758,6 +817,9 @@
                 document.getElementById('infoGolongan').textContent = `Golongan ${selectedValue}`;
                 document.getElementById('infoJenis').textContent = vehicleInfo[selectedValue].name;
                 document.getElementById('infoTarif').textContent = vehicleInfo[selectedValue].tarif;
+                
+                // Debug: log image path
+                console.log('Loading image:', vehicleImages[selectedValue]);
             } else {
                 // Show placeholder
                 vehicleImageContainer.innerHTML = `
@@ -854,9 +916,16 @@
         const inputs = document.querySelectorAll('input');
         inputs.forEach(input => {
             input.addEventListener('input', () => {
-                document.getElementById('errorMessage').classList.remove('show');
+                const errorMsg = document.getElementById('errorMessage');
+                if (errorMsg) {
+                    errorMsg.classList.remove('show');
+                }
             });
         });
+
+        // Debug: Log current path
+        console.log('Current base path:', BASE_PATH);
+        console.log('Image paths:', vehicleImages);
     </script>
 </body>
 </html>
