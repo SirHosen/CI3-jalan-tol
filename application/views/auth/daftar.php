@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Daftar - Sistem Manajemen Tol</title>
+    
+    <!-- jQuery (pastikan sudah ada) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
     <style>
         * {
             margin: 0;
@@ -282,6 +286,21 @@
 
         .plate-preview.active {
             box-shadow: 0 0 20px rgba(138, 43, 226, 0.3);
+        }
+
+        /* Loading indicator for select */
+        .select-loading {
+            position: relative;
+        }
+
+        .select-loading::after {
+            content: '⟳';
+            position: absolute;
+            right: 40px;
+            top: 50%;
+            transform: translateY(-50%);
+            animation: spin 1s linear infinite;
+            color: #9945ff;
         }
 
         /* Password Row */
@@ -596,28 +615,7 @@
                     <label for="licensePlate">Plat Nomor Kendaraan</label>
                     <div class="license-plate-group">
                         <select id="plateRegion" required>
-                            <option value="">Kode</option>
-                            <option value="B">B - Jakarta</option>
-                            <option value="D">D - Bandung</option>
-                            <option value="F">F - Bogor</option>
-                            <option value="E">E - Cirebon</option>
-                            <option value="T">T - Karawang</option>
-                            <option value="Z">Z - Garut</option>
-                            <option value="G">G - Pekalongan</option>
-                            <option value="H">H - Semarang</option>
-                            <option value="K">K - Pati</option>
-                            <option value="R">R - Banyumas</option>
-                            <option value="AA">AA - Magelang</option>
-                            <option value="AD">AD - Surakarta</option>
-                            <option value="AB">AB - Yogyakarta</option>
-                            <option value="L">L - Surabaya</option>
-                            <option value="M">M - Madura</option>
-                            <option value="N">N - Malang</option>
-                            <option value="S">S - Jember</option>
-                            <option value="W">W - Sidoarjo</option>
-                            <option value="P">P - Banyuwangi</option>
-                            <option value="AE">AE - Madiun</option>
-                            <option value="AG">AG - Kediri</option>
+                            <option value="">Loading...</option>
                         </select>
                         <input type="text" id="plateNumber" placeholder="1234" maxlength="4" pattern="[0-9]{1,4}" required>
                         <input type="text" id="plateSuffix" placeholder="ABC" maxlength="3" pattern="[A-Za-z]{1,3}" required>
@@ -630,12 +628,7 @@
                 <div class="form-group">
                     <label for="vehicleType">Golongan Kendaraan</label>
                     <select id="vehicleType" required>
-                        <option value="">Pilih golongan kendaraan</option>
-                        <option value="1" data-tarif="15000">Golongan I - Sedan, Jip, Pick Up</option>
-                        <option value="2" data-tarif="22500">Golongan II - Truk 2 Sumbu</option>
-                        <option value="3" data-tarif="30000">Golongan III - Truk 3 Sumbu</option>
-                        <option value="4" data-tarif="37500">Golongan IV - Truk 4 Sumbu</option>
-                        <option value="5" data-tarif="45000">Golongan V - Truk 5+ Sumbu</option>
+                        <option value="">Loading...</option>
                     </select>
                 </div>
 
@@ -661,7 +654,7 @@
             </form>
 
             <div class="login-link">
-                Sudah memiliki akun? <a href="login.html">Masuk</a>
+                Sudah memiliki akun? <a href="<?php echo base_url('auth/login'); ?>">Masuk</a>
             </div>
         </div>
 
@@ -701,144 +694,208 @@
     </div>
 
     <script>
-        // Base path untuk gambar - sesuaikan dengan struktur folder Anda
-        const BASE_PATH = './'; // Ubah sesuai kebutuhan, misal: '/namaproject/' atau '../'
+        // Base URL dari CodeIgniter
+        const BASE_URL = '<?php echo base_url(); ?>';
         
-        // Vehicle images dengan path lokal
-        const vehicleImages = {
-            '1': BASE_PATH + 'assets/images/G01.png',
-            '2': BASE_PATH + 'assets/images/G02.png',
-            '3': BASE_PATH + 'assets/images/G03.png',
-            '4': BASE_PATH + 'assets/images/G04.png',
-            '5': BASE_PATH + 'assets/images/G05.png'
-        };
+        // Variable untuk menyimpan data golongan
+        let vehicleData = {};
 
-        const vehicleInfo = {
-            '1': { name: 'Sedan, Jip, Pick Up', tarif: 'Rp 15.000' },
-            '2': { name: 'Truk 2 Sumbu', tarif: 'Rp 22.500' },
-            '3': { name: 'Truk 3 Sumbu', tarif: 'Rp 30.000' },
-            '4': { name: 'Truk 4 Sumbu', tarif: 'Rp 37.500' },
-            '5': { name: 'Truk 5+ Sumbu', tarif: 'Rp 45.000' }
-        };
+        // Load data kode plat dari database
+        $(document).ready(function() {
+            // Load kode plat wilayah
+            loadKodePlat();
+            
+            // Load golongan kendaraan
+            loadGolonganKendaraan();
+        });
+
+        // Function untuk load kode plat
+        function loadKodePlat() {
+            $.ajax({
+                url: BASE_URL + 'kendaraan/get_kode_plat',
+                method: 'GET',
+                dataType: 'json',
+                beforeSend: function() {
+                    $('#plateRegion').addClass('select-loading');
+                },
+                success: function(response) {
+                    if (response.status === 'success') {
+                        let dropdown = $('#plateRegion');
+                        dropdown.empty();
+                        dropdown.append('<option value="">Pilih Kode</option>');
+                        
+                        response.data.forEach(function(item) {
+                            dropdown.append(`<option value="${item.kode}">${item.kode} - ${item.nama_wilayah}</option>`);
+                        });
+                        
+                        dropdown.removeClass('select-loading');
+                    } else {
+                        console.error('Gagal memuat data kode plat');
+                        showError('Gagal memuat data kode plat');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error loading kode plat:', error);
+                    $('#plateRegion').removeClass('select-loading');
+                    
+                    // Fallback ke data statis jika API gagal
+                    loadStaticKodePlat();
+                }
+            });
+        }
+
+        // Function untuk load golongan kendaraan
+        function loadGolonganKendaraan() {
+            $.ajax({
+                url: BASE_URL + 'kendaraan/get_golongan_kendaraan',
+                method: 'GET',
+                dataType: 'json',
+                beforeSend: function() {
+                    $('#vehicleType').addClass('select-loading');
+                },
+                success: function(response) {
+                    if (response.status === 'success') {
+                        let dropdown = $('#vehicleType');
+                        dropdown.empty();
+                        dropdown.append('<option value="">Pilih golongan kendaraan</option>');
+                        
+                        response.data.forEach(function(item) {
+                            // Simpan data untuk preview
+                            vehicleData[item.kode_golongan] = {
+                                nama: item.nama_golongan,
+                                deskripsi: item.deskripsi,
+                                tarif: item.tarif_per_km,
+                                gambar: item.gambar_path
+                            };
+                            
+                            dropdown.append(`<option value="${item.kode_golongan}" data-tarif="${item.tarif_per_km}">${item.nama_golongan} - ${item.deskripsi}</option>`);
+                        });
+                        
+                        dropdown.removeClass('select-loading');
+                    } else {
+                        console.error('Gagal memuat data golongan');
+                        showError('Gagal memuat data golongan kendaraan');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error loading golongan:', error);
+                    $('#vehicleType').removeClass('select-loading');
+                    
+                    // Fallback ke data statis jika API gagal
+                    loadStaticGolongan();
+                }
+            });
+        }
+
+        function loadStaticGolongan() {
+            const staticData = [
+                {kode_golongan: '1', nama_golongan: 'Golongan I', deskripsi: 'Sedan, Jip, Pick Up', tarif_per_km: 15000},
+                {kode_golongan: '2', nama_golongan: 'Golongan II', deskripsi: 'Truk 2 Sumbu', tarif_per_km: 22500},
+                {kode_golongan: '3', nama_golongan: 'Golongan III', deskripsi: 'Truk 3 Sumbu', tarif_per_km: 30000},
+                {kode_golongan: '4', nama_golongan: 'Golongan IV', deskripsi: 'Truk 4 Sumbu', tarif_per_km: 37500},
+                {kode_golongan: '5', nama_golongan: 'Golongan V', deskripsi: 'Truk 5+ Sumbu', tarif_per_km: 45000}
+            ];
+            
+            let dropdown = $('#vehicleType');
+            dropdown.empty();
+            dropdown.append('<option value="">Pilih golongan kendaraan</option>');
+            
+            staticData.forEach(function(item) {
+                vehicleData[item.kode_golongan] = {
+                    nama: item.nama_golongan,
+                    deskripsi: item.deskripsi,
+                    tarif: item.tarif_per_km,
+                    gambar: BASE_URL + 'assets/images/G0' + item.kode_golongan + '.png'
+                };
+                
+                dropdown.append(`<option value="${item.kode_golongan}" data-tarif="${item.tarif_per_km}">${item.nama_golongan} - ${item.deskripsi}</option>`);
+            });
+        }
 
         // License Plate Preview
-        const plateRegion = document.getElementById('plateRegion');
-        const plateNumber = document.getElementById('plateNumber');
-        const plateSuffix = document.getElementById('plateSuffix');
-        const plateDisplay = document.getElementById('plateDisplay');
-        const platePreview = document.getElementById('platePreview');
-
         function updatePlatePreview() {
-            const region = plateRegion.value;
-            const number = plateNumber.value;
-            const suffix = plateSuffix.value.toUpperCase();
+            const region = $('#plateRegion').val();
+            const number = $('#plateNumber').val();
+            const suffix = $('#plateSuffix').val().toUpperCase();
             
             if (region || number || suffix) {
                 const displayText = `${region || '-'} ${number || '----'} ${suffix || '---'}`;
-                plateDisplay.textContent = displayText;
-                platePreview.classList.add('active');
-                
-                // Update info panel
-                const infoPlat = document.getElementById('infoPlat');
-                if (infoPlat) {
-                    infoPlat.textContent = displayText;
-                }
+                $('#plateDisplay').text(displayText);
+                $('#platePreview').addClass('active');
+                $('#infoPlat').text(displayText);
             } else {
-                plateDisplay.textContent = '- - - - -';
-                platePreview.classList.remove('active');
-                const infoPlat = document.getElementById('infoPlat');
-                if (infoPlat) {
-                    infoPlat.textContent = '-';
-                }
+                $('#plateDisplay').text('- - - - -');
+                $('#platePreview').removeClass('active');
+                $('#infoPlat').text('-');
             }
         }
 
-        plateRegion.addEventListener('change', updatePlatePreview);
-        plateNumber.addEventListener('input', function(e) {
-            this.value = this.value.replace(/[^0-9]/g, '');
+        // Event listeners untuk plate preview
+        $('#plateRegion').on('change', updatePlatePreview);
+        $('#plateNumber').on('input', function() {
+            $(this).val($(this).val().replace(/[^0-9]/g, ''));
             updatePlatePreview();
         });
-        plateSuffix.addEventListener('input', function(e) {
-            this.value = this.value.replace(/[^a-zA-Z]/g, '').toUpperCase();
+        $('#plateSuffix').on('input', function() {
+            $(this).val($(this).val().replace(/[^a-zA-Z]/g, '').toUpperCase());
             updatePlatePreview();
         });
 
         // Vehicle Type Selection
-        const vehicleType = document.getElementById('vehicleType');
-        const vehicleImageContainer = document.getElementById('vehicleImageContainer');
-        const vehicleInfoPanel = document.getElementById('vehicleInfo');
-
-        // Function to handle image load error
-        function handleImageError(imgElement) {
-            console.error('Gambar gagal dimuat');
-            vehicleImageContainer.innerHTML = `
-                <div class="image-error">
-                    <div class="image-error-icon">⚠️</div>
-                    <p>Gambar tidak dapat dimuat</p>
-                    <small>Periksa path: ${imgElement.src}</small>
-                </div>
-            `;
-        }
-
-        vehicleType.addEventListener('change', function() {
-            const selectedValue = this.value;
+        $('#vehicleType').on('change', function() {
+            const selectedValue = $(this).val();
             
-            if (selectedValue) {
-                // Create image element
+            if (selectedValue && vehicleData[selectedValue]) {
+                const data = vehicleData[selectedValue];
+                
+                // Update image
                 const img = new Image();
                 img.className = 'vehicle-image';
-                img.alt = `Golongan ${selectedValue}`;
+                img.alt = data.nama;
                 
-                // Set up error handling
                 img.onerror = function() {
-                    handleImageError(this);
+                    $('#vehicleImageContainer').html(`
+                        <div class="image-error">
+                            <div class="image-error-icon">⚠️</div>
+                            <p>Gambar tidak dapat dimuat</p>
+                        </div>
+                    `);
                 };
                 
-                // Set up success handling
                 img.onload = function() {
-                    vehicleImageContainer.innerHTML = '';
-                    vehicleImageContainer.appendChild(img);
-                    console.log('Gambar berhasil dimuat:', img.src);
+                    $('#vehicleImageContainer').empty().append(img);
                 };
                 
                 // Set image source
-                img.src = vehicleImages[selectedValue];
+                img.src = BASE_URL + (data.gambar || `assets/images/G0${selectedValue}.png`);
                 
-                // Show loading while image loads
-                vehicleImageContainer.innerHTML = `
+                // Show loading
+                $('#vehicleImageContainer').html(`
                     <div class="no-vehicle">
                         <div class="loading" style="display: block;"></div>
                         <p style="margin-top: 20px;">Memuat gambar...</p>
                     </div>
-                `;
+                `);
                 
-                // Show vehicle info
-                vehicleInfoPanel.style.display = 'block';
-                document.getElementById('infoGolongan').textContent = `Golongan ${selectedValue}`;
-                document.getElementById('infoJenis').textContent = vehicleInfo[selectedValue].name;
-                document.getElementById('infoTarif').textContent = vehicleInfo[selectedValue].tarif;
-                
-                // Debug: log image path
-                console.log('Loading image:', vehicleImages[selectedValue]);
+                // Update info
+                $('#vehicleInfo').show();
+                $('#infoGolongan').text(data.nama);
+                $('#infoJenis').text(data.deskripsi);
+                $('#infoTarif').text('Rp ' + new Intl.NumberFormat('id-ID').format(data.tarif));
             } else {
-                // Show placeholder
-                vehicleImageContainer.innerHTML = `
+                $('#vehicleImageContainer').html(`
                     <div class="no-vehicle">
                         <div class="no-vehicle-icon">🚗</div>
                         <p>Pilih golongan kendaraan</p>
                     </div>
-                `;
-                vehicleInfoPanel.style.display = 'none';
+                `);
+                $('#vehicleInfo').hide();
             }
         });
 
         // Password strength checker
-        const passwordInput = document.getElementById('password');
-        const strengthBar = document.getElementById('strengthBar');
-        const strengthText = document.getElementById('strengthText');
-
-        passwordInput.addEventListener('input', function(e) {
-            const password = e.target.value;
+        $('#password').on('input', function() {
+            const password = $(this).val();
             let strength = 0;
             
             if (password.length >= 8) strength++;
@@ -847,85 +904,100 @@
             if (/[0-9]/.test(password)) strength++;
             if (/[^a-zA-Z0-9]/.test(password)) strength++;
             
-            strengthBar.className = 'strength-bar';
+            $('#strengthBar').removeClass('strength-weak strength-medium strength-strong');
             
             if (password.length === 0) {
-                strengthBar.style.width = '0';
-                strengthText.textContent = '';
+                $('#strengthBar').css('width', '0');
+                $('#strengthText').text('');
             } else if (strength <= 2) {
-                strengthBar.className = 'strength-bar strength-weak';
-                strengthText.textContent = 'Kata sandi lemah';
-                strengthText.style.color = '#ff4757';
+                $('#strengthBar').addClass('strength-weak');
+                $('#strengthText').text('Kata sandi lemah').css('color', '#ff4757');
             } else if (strength <= 3) {
-                strengthBar.className = 'strength-bar strength-medium';
-                strengthText.textContent = 'Kata sandi sedang';
-                strengthText.style.color = '#ffa502';
+                $('#strengthBar').addClass('strength-medium');
+                $('#strengthText').text('Kata sandi sedang').css('color', '#ffa502');
             } else {
-                strengthBar.className = 'strength-bar strength-strong';
-                strengthText.textContent = 'Kata sandi kuat';
-                strengthText.style.color = '#26de81';
+                $('#strengthBar').addClass('strength-strong');
+                $('#strengthText').text('Kata sandi kuat').css('color', '#26de81');
             }
         });
 
-        // Form validation
-        document.getElementById('registerForm').addEventListener('submit', function(e) {
+        // Form submission
+        $('#registerForm').on('submit', function(e) {
             e.preventDefault();
             
-            const btn = document.querySelector('.register-btn');
-            const btnText = btn.querySelector('.btn-text');
-            const loading = btn.querySelector('.loading');
-            const errorMsg = document.getElementById('errorMessage');
+            const btnText = $('.btn-text');
+            const loading = $('.register-btn .loading');
+            const errorMsg = $('#errorMessage');
             
-            const password = document.getElementById('password').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
+            const password = $('#password').val();
+            const confirmPassword = $('#confirmPassword').val();
             
             // Reset error
-            errorMsg.classList.remove('show');
-            errorMsg.textContent = '';
+            errorMsg.removeClass('show').text('');
             
-            // Validate passwords match
+            // Validate passwords
             if (password !== confirmPassword) {
-                errorMsg.textContent = 'Kata sandi tidak cocok. Silakan periksa kembali.';
-                errorMsg.classList.add('show');
+                errorMsg.text('Kata sandi tidak cocok. Silakan periksa kembali.').addClass('show');
                 return;
             }
             
-            // Validate password length
             if (password.length < 8) {
-                errorMsg.textContent = 'Kata sandi minimal 8 karakter.';
-                errorMsg.classList.add('show');
+                errorMsg.text('Kata sandi minimal 8 karakter.').addClass('show');
                 return;
             }
             
             // Show loading
-            btnText.style.display = 'none';
-            loading.style.display = 'block';
+            btnText.hide();
+            loading.show();
             
-            // Simulate registration process
-            setTimeout(() => {
-                btnText.style.display = 'block';
-                loading.style.display = 'none';
-                
-                // Success
-                alert('Pendaftaran berhasil! Silakan cek email Anda untuk verifikasi.');
-                // window.location.href = 'login.html';
-            }, 2000);
-        });
-
-        // Clear error on input
-        const inputs = document.querySelectorAll('input');
-        inputs.forEach(input => {
-            input.addEventListener('input', () => {
-                const errorMsg = document.getElementById('errorMessage');
-                if (errorMsg) {
-                    errorMsg.classList.remove('show');
+            // Prepare data
+            const formData = {
+                nama_lengkap: $('#fullName').val(),
+                email: $('#email').val(),
+                no_hp: $('#phone').val(),
+                password: password,
+                plat_kode_wilayah: $('#plateRegion').val(),
+                plat_nomor: $('#plateNumber').val(),
+                plat_huruf: $('#plateSuffix').val().toUpperCase(),
+                golongan_id: $('#vehicleType').val()
+            };
+            
+            // Submit to server
+            $.ajax({
+                url: BASE_URL + 'auth/register',
+                method: 'POST',
+                data: formData,
+                dataType: 'json',
+                success: function(response) {
+                    if (response.status === 'success') {
+                        alert('Pendaftaran berhasil! Silakan cek email Anda untuk verifikasi.');
+                        window.location.href = BASE_URL + 'auth/login';
+                    } else {
+                        errorMsg.text(response.message || 'Terjadi kesalahan saat mendaftar.').addClass('show');
+                        btnText.show();
+                        loading.hide();
+                    }
+                },
+                error: function(xhr, status, error) {
+                    errorMsg.text('Terjadi kesalahan server. Silakan coba lagi.').addClass('show');
+                    btnText.show();
+                    loading.hide();
                 }
             });
         });
 
-        // Debug: Log current path
-        console.log('Current base path:', BASE_PATH);
-        console.log('Image paths:', vehicleImages);
+        // Clear error on input
+        $('input').on('input', function() {
+            $('#errorMessage').removeClass('show');
+        });
+
+        // Helper function untuk show error
+        function showError(message) {
+            $('#errorMessage').text(message).addClass('show');
+            setTimeout(() => {
+                $('#errorMessage').removeClass('show');
+            }, 5000);
+        }
     </script>
 </body>
 </html>
